@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/pages/add_task.dart';
+import 'package:todo_list/pages/edit_task.dart';
 import 'package:todo_list/models/task.dart';
 
 class TasksPage extends StatefulWidget {
@@ -25,6 +26,77 @@ class _TasksPageState extends State<TasksPage> {
         tasks.add(newTask);
       });
     }
+  }
+
+  Future<void> editTask(int index) async {
+    final Task? updatedTask = await Navigator.push<Task>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditTaskPage(
+          task: tasks[index],
+        ),
+      ),
+    );
+
+    if (updatedTask != null) {
+      setState(() {
+        tasks[index] = updatedTask;
+      });
+    }
+  }
+
+  Future<void> deleteTask(int index) async {
+    final Task deletedTask = tasks[index];
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Task'),
+          content: const Text(
+            'Are you sure you want to delete this task?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  tasks.removeAt(index);
+                });
+                Navigator.pop(context);
+
+                // remove the task from the list first, then show the snackbar
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Task deleted'),
+                    duration: const Duration(seconds: 5),
+                    persist: false,
+                    action: SnackBarAction(
+                      label: 'UNDO',
+                      onPressed: () {
+                        setState(() {
+                          tasks.insert(index, deletedTask);
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: const Text(
+                'DELETE',
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -173,13 +245,10 @@ class _TasksPageState extends State<TasksPage> {
                               // Task information
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       task.title,
-
                                       style: const TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.bold,
@@ -190,7 +259,6 @@ class _TasksPageState extends State<TasksPage> {
 
                                     Text(
                                       '${task.category} • ${task.priority}',
-
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: Color(0xFF777777),
@@ -202,9 +270,8 @@ class _TasksPageState extends State<TasksPage> {
                                     Text(
                                       'Due: ${task.dueDate.month}/'
                                       '${task.dueDate.day}/'
-                                      '${task.dueDate.year}'
+                                      '${task.dueDate.year} '
                                       '${TimeOfDay.fromDateTime(task.dueDate).format(context)}',
-
                                       style: const TextStyle(
                                         fontSize: 13,
                                         color: Color(0xFF999999),
@@ -212,6 +279,26 @@ class _TasksPageState extends State<TasksPage> {
                                     ),
                                   ],
                                 ),
+                              ),
+
+                              // Edit button
+                              IconButton(
+                                onPressed: () => editTask(index),
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  color: Color(0xFF002366),
+                                ),
+                                tooltip: 'Edit task',
+                              ),
+
+                              // Delete button
+                              IconButton(
+                                onPressed: () => deleteTask(index),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                tooltip: 'Delete task',
                               ),
                             ],
                           ),

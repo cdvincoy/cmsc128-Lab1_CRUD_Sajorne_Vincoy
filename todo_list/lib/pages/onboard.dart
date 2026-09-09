@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:todo_list/pages/tasks.dart';
 
 class OnboardPage extends StatelessWidget {
   const OnboardPage({super.key});
@@ -34,7 +35,7 @@ class OnboardPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF555555),
+                  color: AppColors.accentColor,
                   height: 1.4,
                 ),
               ),
@@ -46,10 +47,10 @@ class OnboardPage extends StatelessWidget {
                 height: 60,
                 child: ElevatedButton(
                   onPressed: () {
-                    // tasks main page
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const TasksPage()));
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5B16E8),
+                    backgroundColor: AppColors.mainButton,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
