@@ -1,12 +1,10 @@
-// These are task values
-
 class Task {
   final String id;
   final String title;
   final DateTime dueDate;
   final DateTime timeCreated;
   final String category;
-  final String tag;
+  final String priority;
   final bool isCompleted;
 
   Task({
@@ -15,7 +13,7 @@ class Task {
     required this.dueDate,
     required this.timeCreated,
     required this.category,
-    required this.tag,
+    required this.priority,
     required this.isCompleted,
   });
 }
