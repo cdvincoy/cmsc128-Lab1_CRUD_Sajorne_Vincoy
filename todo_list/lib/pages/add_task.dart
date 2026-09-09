@@ -1,0 +1,435 @@
+import 'package:flutter/material.dart';
+import 'package:todo_list/models/task.dart';
+
+class AddTaskPage extends StatefulWidget {
+  const AddTaskPage({super.key});
+
+  @override
+  State<AddTaskPage> createState() => _AddTaskPageState();
+}
+
+class _AddTaskPageState extends State<AddTaskPage> {
+  final TextEditingController titleController = TextEditingController();
+
+  String? selectedCategory;
+  String? selectedPriority;
+  DateTime? selectedDueDate;
+  TimeOfDay? selectedDueTime;
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    super.dispose();
+  }
+
+  // Select due date
+  Future<void> selectDueDate() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        selectedDueDate = pickedDate;
+      });
+    }
+  }
+
+  // Select due time
+  Future<void> selectDueTime() async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime != null) {
+      setState(() {
+        selectedDueTime = pickedTime;
+      });
+    }
+  }
+
+  // Create task
+  void addTask() {
+    if (titleController.text.trim().isEmpty ||
+        selectedCategory == null ||
+        selectedPriority == null ||
+        selectedDueDate == null ||
+        selectedDueTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please complete all required fields.'),
+        ),
+      );
+
+      return;
+    }
+
+    // Combine selected date and time
+    final DateTime finalDueDate = DateTime(
+      selectedDueDate!.year,
+      selectedDueDate!.month,
+      selectedDueDate!.day,
+      selectedDueTime!.hour,
+      selectedDueTime!.minute,
+    );
+
+    final Task newTask = Task(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: titleController.text.trim(),
+      dueDate: finalDueDate,
+      timeCreated: DateTime.now(),
+      category: selectedCategory!,
+      priority: selectedPriority!,
+      isCompleted: false,
+    );
+
+    // Return the task to TasksPage
+    Navigator.pop(context, newTask);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F9),
+
+      // APP BAR
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F7F9),
+        elevation: 0,
+
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.black,
+          ),
+        ),
+
+        title: const Text(
+          'Add Task',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+
+      // FORM
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
+          children: [
+            // TASK TITLE
+            const Text(
+              'Task',
+
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            TextField(
+              controller: titleController,
+
+              decoration: InputDecoration(
+                hintText: 'Enter task',
+                filled: true,
+                fillColor: Colors.white,
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // CATEGORY
+            const Text(
+              'Category',
+
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Container(
+              width: double.infinity,
+
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
+
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedCategory,
+
+                  hint: const Text(
+                    'Select category',
+                  ),
+
+                  isExpanded: true,
+
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'School',
+                      child: Text('School'),
+                    ),
+
+                    DropdownMenuItem(
+                      value: 'Personal',
+                      child: Text('Personal'),
+                    ),
+
+                    DropdownMenuItem(
+                      value: 'Work',
+                      child: Text('Work'),
+                    ),
+                  ],
+
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategory = value;
+                    });
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // PRIORITY
+            const Text(
+              'Priority',
+
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              children: [
+                _priorityButton('High'),
+
+                const SizedBox(width: 8),
+
+                _priorityButton('Medium'),
+
+                const SizedBox(width: 8),
+
+                _priorityButton('Low'),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // DUE DATE
+            const Text(
+              'Due Date',
+
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            GestureDetector(
+              onTap: selectDueDate,
+
+              child: Container(
+                width: double.infinity,
+
+                padding: const EdgeInsets.all(16),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+
+                  children: [
+                    Text(
+                      selectedDueDate == null
+                          ? 'Select a date'
+                          : '${selectedDueDate!.month}/'
+                            '${selectedDueDate!.day}/'
+                            '${selectedDueDate!.year}',
+
+                      style: TextStyle(
+                        color: selectedDueDate == null
+                            ? const Color(0xFF777777)
+                            : Colors.black,
+                      ),
+                    ),
+
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // DUE TIME
+            const Text(
+              'Due Time',
+
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            GestureDetector(
+              onTap: selectDueTime,
+
+              child: Container(
+                width: double.infinity,
+
+                padding: const EdgeInsets.all(16),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+
+                  children: [
+                    Text(
+                      selectedDueTime == null
+                          ? 'Select a time'
+                          : selectedDueTime!.format(context),
+
+                      style: TextStyle(
+                        color: selectedDueTime == null
+                            ? const Color(0xFF777777)
+                            : Colors.black,
+                      ),
+                    ),
+
+                    const Icon(
+                      Icons.access_time,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // ADD TASK BUTTON
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+
+              child: ElevatedButton(
+                onPressed: addTask,
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF002366),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+
+                child: const Text(
+                  'ADD TASK',
+
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Priority button
+  Widget _priorityButton(String text) {
+    final bool isSelected = selectedPriority == text;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            selectedPriority = text;
+          });
+        },
+
+        child: Container(
+          height: 45,
+
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF002366)
+                : Colors.white,
+
+            borderRadius: BorderRadius.circular(12),
+          ),
+
+          child: Center(
+            child: Text(
+              text,
+
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : Colors.black,
+
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
