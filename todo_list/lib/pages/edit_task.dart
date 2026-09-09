@@ -25,14 +25,16 @@ class _EditTaskPageState extends State<EditTaskPage> {
   void initState() {
     super.initState();
 
+    final task = widget.task;
+
     titleController = TextEditingController(
-      text: widget.task.title,
+      text: task.title,
     );
 
-    selectedCategory = widget.task.category;
-    selectedPriority = widget.task.priority;
-    selectedDueDate = widget.task.dueDate;
-    selectedDueTime = TimeOfDay.fromDateTime(widget.task.dueDate);
+    selectedCategory = task.category;
+    selectedPriority = task.priority;
+    selectedDueDate = task.dueDate;
+    selectedDueTime = TimeOfDay.fromDateTime(task.dueDate);
   }
 
   @override
@@ -92,14 +94,15 @@ class _EditTaskPageState extends State<EditTaskPage> {
       selectedDueTime!.minute,
     );
 
+    final task = widget.task;
     final Task updatedTask = Task(
-      id: widget.task.id,
+      id: task.id,
       title: titleController.text.trim(),
       dueDate: finalDueDate,
-      timeCreated: widget.task.timeCreated,
+      timeCreated: task.timeCreated,
       category: selectedCategory!,
       priority: selectedPriority!,
-      isCompleted: widget.task.isCompleted,
+      isCompleted: task.isCompleted,
     );
 
     Navigator.pop(context, updatedTask);
