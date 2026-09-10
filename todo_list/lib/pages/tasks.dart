@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/pages/add_task.dart';
 import 'package:todo_list/pages/edit_task.dart';
+import 'package:todo_list/service/tasks_actions.dart';
 import 'package:todo_list/models/task.dart';
 
 class TasksPage extends StatefulWidget {
@@ -11,7 +12,7 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  final List<Task> tasks = [];
+  final TasksActions tasksActions = TasksActions();
 
   Future<void> openAddTaskPage() async {
     final Task? newTask = await Navigator.push<Task>(
@@ -22,32 +23,28 @@ class _TasksPageState extends State<TasksPage> {
     );
 
     if (newTask != null) {
-      setState(() {
-        tasks.add(newTask);
-      });
+      await tasksActions.createTask(newTask);
     }
   }
 
-  Future<void> editTask(int index) async {
+  Future<void> editTask(Task task) async {
     final Task? updatedTask = await Navigator.push<Task>(
       context,
       MaterialPageRoute(
         builder: (context) => EditTaskPage(
-          task: tasks[index],
+          task: task,
         ),
       ),
     );
 
     if (updatedTask != null) {
-      setState(() {
-        tasks[index] = updatedTask;
-      });
+      await tasksActions.updateTask(updatedTask);
     }
   }
 
-  Future<void> deleteTask(int index) async {
-    final Task deletedTask = tasks[index];
-    showDialog(
+  Future<void> deleteTask(Task task) async {
+    final Task deletedTask = task;
+    final confirmDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -58,33 +55,13 @@ class _TasksPageState extends State<TasksPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context, false);
               },
               child: const Text('CANCEL'),
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  tasks.removeAt(index);
-                });
-                Navigator.pop(context);
-
-                // remove the task from the list first, then show the snackbar
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Task deleted'),
-                    duration: const Duration(seconds: 5),
-                    persist: false,
-                    action: SnackBarAction(
-                      label: 'UNDO',
-                      onPressed: () {
-                        setState(() {
-                          tasks.insert(index, deletedTask);
-                        });
-                      },
-                    ),
-                  ),
-                );
+                Navigator.pop(context, true);
               },
               child: const Text(
                 'DELETE',
@@ -97,6 +74,30 @@ class _TasksPageState extends State<TasksPage> {
         );
       },
     );
+    if (confirmDelete != true) {
+      return;
+    }
+    await tasksActions.deleteTask(deletedTask.id);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Task deleted'),
+        duration: const Duration(seconds: 5),
+        persist: false,
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () async {
+            await tasksActions.undoDelete(deletedTask);
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> completedTask(Task task, bool isCompleted) async {
+    await tasksActions.completeTask(task.id, isCompleted);
   }
 
   @override
@@ -202,109 +203,238 @@ class _TasksPageState extends State<TasksPage> {
 
             // Task list
             Expanded(
-              child: tasks.isEmpty
-                  ? const Center(
+              child: StreamBuilder<List<Task>>(
+                stream: tasksActions.readTasks(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Text('Loading your tasks...'),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Center(
+                      child: Text('Error loading tasks'),
+                    );
+                  }
+
+                  final tasks = snapshot.data ?? [];
+
+                  final activeTasks = tasks
+                      .where((task) => !task.isCompleted)
+                      .toList();
+
+                  final completedTasks = tasks
+                      .where((task) => task.isCompleted)
+                      .toList();
+
+                  if (tasks.isEmpty) {
+                    return const Center(
                       child: Text(
                         'No tasks yet.\nAdd a task to get started!',
                         textAlign: TextAlign.center,
-
                         style: TextStyle(
                           fontSize: 16,
                           color: Color(0xFF777777),
                           height: 1.5,
                         ),
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: tasks.length,
+                    );
+                  }
 
-                      itemBuilder: (context, index) {
-                        final Task task = tasks[index];
+                  return ListView(
+                    children: [
+                      ...activeTasks.map(
+                        (task) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
 
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            child: Row(
+                              children: [
+                                // Completion checkbox
+                                Checkbox(
+                                  value: task.isCompleted,
+                                  onChanged: (value) {
+                                    completedTask(task, value ?? false);
+                                  },
+                                ),
+
+                                const SizedBox(width: 8),
+
+                                // Task information
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        task.title,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 6),
+
+                                      Text(
+                                        '${task.category} • ${task.priority}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF777777),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Text(
+                                        'Due: ${task.dueDate.month}/'
+                                        '${task.dueDate.day}/'
+                                        '${task.dueDate.year} '
+                                        '${TimeOfDay.fromDateTime(task.dueDate).format(context)}',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF999999),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Edit button
+                                IconButton(
+                                  onPressed: () => editTask(task),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    color: Color(0xFF002366),
+                                  ),
+                                  tooltip: 'Edit task',
+                                ),
+
+                                // Delete button
+                                IconButton(
+                                  onPressed: () => deleteTask(task),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  tooltip: 'Delete task',
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+
+                      if (completedTasks.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+
+                        const Text(
+                          'Task Done',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
 
-                          child: Row(
-                            children: [
-                              // Completion checkbox
-                              Checkbox(
-                                value: task.isCompleted,
-                                onChanged: (value) {
-                                  // completion
-                                },
+                        const SizedBox(height: 12),
+
+                        ...completedTasks.map(
+                          (task) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
                               ),
 
-                              const SizedBox(width: 8),
+                              child: Row(
+                                children: [
+                                  // Completion checkbox
+                                  Checkbox(
+                                    value: task.isCompleted,
+                                    onChanged: (value) {
+                                      completedTask(task, value ?? false);
+                                    },
+                                  ),
 
-                              // Task information
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      task.title,
-                                      style: const TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  const SizedBox(width: 8),
+
+                                  // Task information
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          task.title,
+                                          style: const TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 6),
+
+                                        Text(
+                                          '${task.category} • ${task.priority}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF777777),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 4),
+
+                                        Text(
+                                          'Due: ${task.dueDate.month}/'
+                                          '${task.dueDate.day}/'
+                                          '${task.dueDate.year} '
+                                          '${TimeOfDay.fromDateTime(task.dueDate).format(context)}',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF999999),
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
 
-                                    const SizedBox(height: 6),
-
-                                    Text(
-                                      '${task.category} • ${task.priority}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF777777),
-                                      ),
+                                  // Edit button
+                                  IconButton(
+                                    onPressed: () => editTask(task),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      color: Color(0xFF002366),
                                     ),
+                                    tooltip: 'Edit task',
+                                  ),
 
-                                    const SizedBox(height: 4),
-
-                                    Text(
-                                      'Due: ${task.dueDate.month}/'
-                                      '${task.dueDate.day}/'
-                                      '${task.dueDate.year} '
-                                      '${TimeOfDay.fromDateTime(task.dueDate).format(context)}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Color(0xFF999999),
-                                      ),
+                                  // Delete button
+                                  IconButton(
+                                    onPressed: () => deleteTask(task),
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red,
                                     ),
-                                  ],
-                                ),
+                                    tooltip: 'Delete task',
+                                  ),
+                                ],
                               ),
-
-                              // Edit button
-                              IconButton(
-                                onPressed: () => editTask(index),
-                                icon: const Icon(
-                                  Icons.edit_outlined,
-                                  color: Color(0xFF002366),
-                                ),
-                                tooltip: 'Edit task',
-                              ),
-
-                              // Delete button
-                              IconButton(
-                                onPressed: () => deleteTask(index),
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                tooltip: 'Delete task',
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -313,9 +443,7 @@ class _TasksPageState extends State<TasksPage> {
       // + button
       floatingActionButton: FloatingActionButton(
         onPressed: openAddTaskPage,
-
         backgroundColor: const Color(0xFF002366),
-
         child: const Icon(
           Icons.add,
           color: Colors.white,

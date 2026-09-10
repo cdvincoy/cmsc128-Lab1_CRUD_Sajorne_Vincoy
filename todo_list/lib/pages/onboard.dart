@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:todo_list/theme/colors.dart';
 import 'package:todo_list/pages/tasks.dart';
 
 class OnboardPage extends StatelessWidget {
