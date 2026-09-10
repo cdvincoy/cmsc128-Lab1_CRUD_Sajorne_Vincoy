@@ -3,6 +3,7 @@ import 'package:todo_list/pages/add_task.dart';
 import 'package:todo_list/pages/edit_task.dart';
 import 'package:todo_list/service/tasks_actions.dart';
 import 'package:todo_list/models/task.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -13,6 +14,11 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   final TasksActions tasksActions = TasksActions();
+
+  bool showCalendar = false;
+
+  DateTime focusedDay = DateTime.now();
+  DateTime selectDay = DateTime.now();
 
   Future<void> openAddTaskPage() async {
     final Task? newTask = await Navigator.push<Task>(
@@ -150,52 +156,76 @@ class _TasksPageState extends State<TasksPage> {
 
             const SizedBox(height: 20),
 
-            // Today / Scheduled toggle
+            // Scheduled / Calendar toggle
             Row(
               children: [
                 Expanded(
+                  child: GestureDetector(
+                    onTap: (){
+                      setState(() {
+                        showCalendar = false;
+                      });
+                    },
+                  
                   child: Container(
                     height: 45,
 
                     decoration: BoxDecoration(
-                      color: const Color(0xFF002366),
+                      color: !showCalendar ?
+                       const Color(0xFF002366)
+                       : Colors.white,
                       borderRadius: BorderRadius.circular(25),
                     ),
 
-                    child: const Center(
-                      child: Text(
-                        'Today',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                Expanded(
-                  child: Container(
-                    height: 45,
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Scheduled',
                         style: TextStyle(
-                          color: Color(0xFF555555),
+                          color: !showCalendar ?
+                           Colors.white
+                           : const Color(0xFF555555),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
                 ),
+              ),
+                
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showCalendar = true;
+                      });
+                    },
+                  
+                  child: Container(
+                    height: 45,
+
+                    decoration: BoxDecoration(
+                      color: showCalendar
+                      ? const Color(0xFF002366)
+                      : Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+
+                    child: Center(
+                      child: Text(
+                        'Calendar',
+                        style: TextStyle(
+                          color: showCalendar
+                          ? Colors.white
+                          : const Color(0xFF555555),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                ), 
               ],
             ),
 
