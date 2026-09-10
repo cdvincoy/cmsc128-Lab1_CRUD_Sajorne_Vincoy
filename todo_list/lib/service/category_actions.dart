@@ -54,4 +54,52 @@ class CategoryActions {
       }).toList();
     });
   }
+
+  Future<bool> updateCategory(
+    String oldName,
+    String newName,
+  ) async {
+    final snapshot = await categoriesCollection.get();
+
+    final alreadyExists = snapshot.docs.any((doc) {
+      final category = doc.data() as Map<String, dynamic>;
+
+      return (category['name'] as String).trim().toLowerCase() ==
+          newName.trim().toLowerCase();
+    });
+
+    if (alreadyExists) {
+      return false;
+    }
+
+    for (final doc in snapshot.docs) {
+      final category = doc.data() as Map<String, dynamic>;
+
+      if ((category['name'] as String).trim().toLowerCase() ==
+          oldName.trim().toLowerCase()) {
+        await doc.reference.update({
+          'name': newName.trim(),
+        });
+
+        break;
+      }
+    }
+
+    return true;
+  }
+
+  Future<void> deleteCategory(String categoryName) async {
+    final snapshot = await categoriesCollection.get();
+
+    for (final doc in snapshot.docs) {
+      final category = doc.data() as Map<String, dynamic>;
+
+      if ((category['name'] as String).trim().toLowerCase() ==
+          categoryName.trim().toLowerCase()) {
+        await doc.reference.delete();
+
+        break;
+      }
+    }
+  }
 }

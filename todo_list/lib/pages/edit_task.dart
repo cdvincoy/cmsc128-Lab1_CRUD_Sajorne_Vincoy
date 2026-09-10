@@ -46,6 +46,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
     super.dispose();
   }
 
+  // Select due date
   Future<void> selectDueDate() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -61,6 +62,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
     }
   }
 
+  // Select due time
   Future<void> selectDueTime() async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
@@ -74,6 +76,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
     }
   }
 
+  // Save changes
   void saveChanges() {
     if (titleController.text.trim().isEmpty ||
         selectedCategory == null ||
@@ -116,6 +119,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F9),
 
+      // APP BAR
       appBar: AppBar(
         backgroundColor: const Color(0xFFF7F7F9),
         elevation: 0,
@@ -140,6 +144,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
         ),
       ),
 
+      // FORM
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
 
@@ -147,6 +152,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
+            // TASK TITLE
             const Text(
               'Task',
               style: TextStyle(
@@ -172,12 +178,34 @@ class _EditTaskPageState extends State<EditTaskPage> {
 
             const SizedBox(height: 24),
 
-            const Text(
-              'Category',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            // CATEGORY
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+              children: [
+                const Text(
+                  'Category',
+
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                IconButton(
+                  onPressed: () {
+                    showManageCategoriesBox(
+                      context,
+                      categoryActions,
+                    );
+                  },
+
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    size: 20,
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 8),
@@ -198,10 +226,16 @@ class _EditTaskPageState extends State<EditTaskPage> {
                 builder: (context, snapshot) {
                   final categories = snapshot.data ?? [];
 
+                  final currentCategory =
+                      categories.contains(selectedCategory)
+                          ? selectedCategory
+                          : null;
+
                   return DropdownButtonFormField<String>(
-                    initialValue: selectedCategory,
+                    initialValue: currentCategory,
+
                     decoration: const InputDecoration(
-                      labelText: 'Category',
+                      labelText: 'Select a category',
                     ),
                     items: [
                       ...categories.map(
@@ -244,6 +278,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
 
             const SizedBox(height: 24),
 
+            // PRIORITY
             const Text(
               'Priority',
               style: TextStyle(
@@ -266,6 +301,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
 
             const SizedBox(height: 24),
 
+            // DUE DATE
             const Text(
               'Due Date',
               style: TextStyle(
@@ -299,6 +335,11 @@ class _EditTaskPageState extends State<EditTaskPage> {
                           : '${selectedDueDate!.month}/'
                             '${selectedDueDate!.day}/'
                             '${selectedDueDate!.year}',
+                      style: TextStyle(
+                        color: selectedDueDate == null
+                            ? const Color(0xFF777777)
+                            : Colors.black,
+                      ),
                     ),
 
                     const Icon(
@@ -312,6 +353,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
 
             const SizedBox(height: 24),
 
+            // DUE TIME
             const Text(
               'Due Time',
               style: TextStyle(
@@ -343,6 +385,11 @@ class _EditTaskPageState extends State<EditTaskPage> {
                       selectedDueTime == null
                           ? 'Select a time'
                           : selectedDueTime!.format(context),
+                      style: TextStyle(
+                        color: selectedDueTime == null
+                            ? const Color(0xFF777777)
+                            : Colors.black,
+                      ),
                     ),
 
                     const Icon(
@@ -356,6 +403,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
 
             const SizedBox(height: 40),
 
+            // SAVE CHANGES BUTTON
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -388,6 +436,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
     );
   }
 
+  // Priority button
   Widget _priorityButton(String text) {
     final bool isSelected = selectedPriority == text;
 
