@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/models/task.dart';
+import 'package:todo_list/service/category_actions.dart';
+import 'package:todo_list/helper_functions/category_method.dart';
 
 class AddTaskPage extends StatefulWidget {
   const AddTaskPage({super.key});
@@ -9,6 +11,7 @@ class AddTaskPage extends StatefulWidget {
 }
 
 class _AddTaskPageState extends State<AddTaskPage> {
+  final CategoryActions categoryActions = CategoryActions();
   final TextEditingController titleController = TextEditingController();
 
   String? selectedCategory;
@@ -183,39 +186,52 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
 
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedCategory,
+              child: StreamBuilder<List<String>>(
+                stream: categoryActions.readCategories(),
+                builder: (context, snapshot) {
+                  final categories = snapshot.data ?? [];
 
-                  hint: const Text(
-                    'Select category',
-                  ),
-
-                  isExpanded: true,
-
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'School',
-                      child: Text('School'),
+                  return DropdownButtonFormField<String>(
+                    initialValue: selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Select a category',
                     ),
+                    items: [
+                      ...categories.map(
+                        (category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        },
+                      ),
 
-                    DropdownMenuItem(
-                      value: 'Personal',
-                      child: Text('Personal'),
-                    ),
+                      const DropdownMenuItem<String>(
+                        value: '__create_category__',
+                        child: Text('+ Add New Category'),
+                      ),
+                    ],
+                    onChanged: (value) async {
+                      if (value == '__create_category__') {
+                        final category =
+                            await showCreateCategoryBox(
+                          context,
+                          categoryActions,
+                        );
 
-                    DropdownMenuItem(
-                      value: 'Work',
-                      child: Text('Work'),
-                    ),
-                  ],
-
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCategory = value;
-                    });
-                  },
-                ),
+                        if (category != null && mounted) {
+                          setState(() {
+                            selectedCategory = category;
+                          });
+                        }
+                      } else {
+                        setState(() {
+                          selectedCategory = value;
+                        });
+                      }
+                    },
+                  );
+                },
               ),
             ),
 
@@ -419,10 +435,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
               text,
 
               style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : Colors.black,
-
+                color: isSelected? Colors.white: Colors.black,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -432,4 +445,3 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 }
-

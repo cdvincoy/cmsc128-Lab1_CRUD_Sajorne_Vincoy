@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:todo_list/pages/add_task.dart';
 import 'package:todo_list/pages/edit_task.dart';
 import 'package:todo_list/service/tasks_actions.dart';
+import 'package:todo_list/service/category_actions.dart';
 import 'package:todo_list/models/task.dart';
 
 class TasksPage extends StatefulWidget {
@@ -13,6 +14,7 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   final TasksActions tasksActions = TasksActions();
+  final CategoryActions categoryActions = CategoryActions();
 
   Future<void> openAddTaskPage() async {
     final Task? newTask = await Navigator.push<Task>(
@@ -94,6 +96,13 @@ class _TasksPageState extends State<TasksPage> {
         ),
       ),
     );
+  }
+
+  // method for initializing defaualt categories
+  @override
+  void initState() {
+    super.initState();
+    categoryActions.createCategories();
   }
 
   Future<void> completedTask(Task task, bool isCompleted) async {
@@ -335,9 +344,9 @@ class _TasksPageState extends State<TasksPage> {
                         const SizedBox(height: 20),
 
                         const Text(
-                          'Task Done',
+                          'Tasks Done',
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

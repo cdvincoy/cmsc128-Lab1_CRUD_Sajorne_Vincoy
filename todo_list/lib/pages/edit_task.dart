@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/models/task.dart';
+import 'package:todo_list/service/category_actions.dart';
+import 'package:todo_list/helper_functions/category_method.dart';
 
 class EditTaskPage extends StatefulWidget {
   final Task task;
@@ -15,6 +17,7 @@ class EditTaskPage extends StatefulWidget {
 
 class _EditTaskPageState extends State<EditTaskPage> {
   late TextEditingController titleController;
+  final CategoryActions categoryActions = CategoryActions();
 
   String? selectedCategory;
   String? selectedPriority;
@@ -190,32 +193,52 @@ class _EditTaskPageState extends State<EditTaskPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
 
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedCategory,
-                  isExpanded: true,
+              child: StreamBuilder<List<String>>(
+                stream: categoryActions.readCategories(),
+                builder: (context, snapshot) {
+                  final categories = snapshot.data ?? [];
 
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'School',
-                      child: Text('School'),
+                  return DropdownButtonFormField<String>(
+                    initialValue: selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
                     ),
-                    DropdownMenuItem(
-                      value: 'Personal',
-                      child: Text('Personal'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Work',
-                      child: Text('Work'),
-                    ),
-                  ],
+                    items: [
+                      ...categories.map(
+                        (category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        },
+                      ),
 
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCategory = value;
-                    });
-                  },
-                ),
+                      const DropdownMenuItem<String>(
+                        value: '__create_category__',
+                        child: Text('+ Add New Category'),
+                      ),
+                    ],
+                    onChanged: (value) async {
+                      if (value == '__create_category__') {
+                        final category =
+                            await showCreateCategoryBox(
+                          context,
+                          categoryActions,
+                        );
+
+                        if (category != null && mounted) {
+                          setState(() {
+                            selectedCategory = category;
+                          });
+                        }
+                      } else {
+                        setState(() {
+                          selectedCategory = value;
+                        });
+                      }
+                    },
+                  );
+                },
               ),
             ),
 
