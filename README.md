@@ -146,4 +146,11 @@ Each task contains information such as:
 
 Task data remains stored in Firestore, allowing tasks to persist after the application is closed or started.
 
-
+<img src="assets/splashscreen.png" alt="App Screenshot" width="150"/>
+<img src="assets/onboard.png" alt="App Screenshot" width="150"/>
+<img src="assets/taskscreen1.png" alt="App Screenshot" width="150"/>
+<img src="assets/completedtask.png" alt="App Screenshot" width="150"/>
+<img src="assets/addtask.png" alt="App Screenshot" width="150"/>
+<img src="assets/calendar.png" alt="App Screenshot" width="150"/>
+<img src="assets/undo.png" alt="App Screenshot" width="150"/>
+<img src="assets/db.jpg" alt="App Screenshot" width="150"/>
