@@ -4,6 +4,7 @@ import 'package:todo_list/pages/edit_task.dart';
 import 'package:todo_list/service/tasks_actions.dart';
 import 'package:todo_list/service/category_actions.dart';
 import 'package:todo_list/models/task.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -15,6 +16,11 @@ class TasksPage extends StatefulWidget {
 class _TasksPageState extends State<TasksPage> {
   final TasksActions tasksActions = TasksActions();
   final CategoryActions categoryActions = CategoryActions();
+
+  bool showCalendar = false;
+
+  DateTime focusedDay = DateTime.now();
+  DateTime selectedDay = DateTime.now();
 
   Future<void> openAddTaskPage() async {
     final Task? newTask = await Navigator.push<Task>(
@@ -159,52 +165,76 @@ class _TasksPageState extends State<TasksPage> {
 
             const SizedBox(height: 20),
 
-            // Today / Scheduled toggle
+            // Scheduled / Calendar toggle
             Row(
               children: [
                 Expanded(
+                  child: GestureDetector(
+                    onTap: (){
+                      setState(() {
+                        showCalendar = false;
+                      });
+                    },
+                  
                   child: Container(
                     height: 45,
 
                     decoration: BoxDecoration(
-                      color: const Color(0xFF002366),
+                      color: !showCalendar ?
+                       const Color(0xFF002366)
+                       : Colors.white,
                       borderRadius: BorderRadius.circular(25),
                     ),
 
-                    child: const Center(
-                      child: Text(
-                        'Today',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                Expanded(
-                  child: Container(
-                    height: 45,
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Scheduled',
                         style: TextStyle(
-                          color: Color(0xFF555555),
+                          color: !showCalendar ?
+                           Colors.white
+                           : const Color(0xFF555555),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
                 ),
+              ),
+                
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showCalendar = true;
+                      });
+                    },
+                  
+                  child: Container(
+                    height: 45,
+
+                    decoration: BoxDecoration(
+                      color: showCalendar
+                      ? const Color(0xFF002366)
+                      : Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+
+                    child: Center(
+                      child: Text(
+                        'Calendar',
+                        style: TextStyle(
+                          color: showCalendar
+                          ? Colors.white
+                          : const Color(0xFF555555),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                ), 
               ],
             ),
 
@@ -236,6 +266,90 @@ class _TasksPageState extends State<TasksPage> {
                   final completedTasks = tasks
                       .where((task) => task.isCompleted)
                       .toList();
+
+                  if (showCalendar) {
+                    return ListView (
+                      padding: const EdgeInsets.only(bottom: 100),
+                      children: [
+                        TableCalendar(
+                          firstDay: DateTime.utc(2020,1,1),
+                          lastDay: DateTime.utc(2030, 12, 31),
+                          focusedDay: focusedDay,
+                          rowHeight: 35,
+                          
+                          selectedDayPredicate: (day) {
+                            return isSameDay(selectedDay, day);
+                          },
+
+                          onDaySelected: (selected, focused) {
+                            setState(() {
+                              selectedDay = selected;
+                              focusedDay = focused;
+                            }
+                            );
+                          },
+
+                          eventLoader: (day) {
+                            return tasks.where((task) {
+                              return isSameDay(task.dueDate, day);
+                            }).toList();
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Expanded(
+                        //   child: ListView(
+                        //     children: [
+                              Text(
+                                'Tasks for ${selectedDay.month}/${selectedDay.day}/${selectedDay.year}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              ...tasks.where((task) {
+                                return isSameDay(task.dueDate, selectedDay);
+                              }).map(
+                                (task){
+                                  return ListTile(
+                                    title: Text(task.title),
+                                    subtitle: Text(
+                                      '${task.category} • ${task.priority}\n'
+                                      '${TimeOfDay.fromDateTime(task.dueDate).format(context)}'
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          onPressed: () => editTask(task),
+                                          icon: const Icon(
+                                            Icons.edit_outlined,
+                                            color: Color(0xFF002366),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed:() => deleteTask(task),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          // ),
+
+                      //     ),
+                      // ],
+                    );
+                  }
 
                   if (tasks.isEmpty) {
                     return const Center(
