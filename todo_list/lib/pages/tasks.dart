@@ -18,7 +18,7 @@ class _TasksPageState extends State<TasksPage> {
   bool showCalendar = false;
 
   DateTime focusedDay = DateTime.now();
-  DateTime selectDay = DateTime.now();
+  DateTime selectedDay = DateTime.now();
 
   Future<void> openAddTaskPage() async {
     final Task? newTask = await Navigator.push<Task>(
@@ -257,6 +257,90 @@ class _TasksPageState extends State<TasksPage> {
                   final completedTasks = tasks
                       .where((task) => task.isCompleted)
                       .toList();
+
+                  if (showCalendar) {
+                    return ListView (
+                      padding: const EdgeInsets.only(bottom: 100),
+                      children: [
+                        TableCalendar(
+                          firstDay: DateTime.utc(2020,1,1),
+                          lastDay: DateTime.utc(2030, 12, 31),
+                          focusedDay: focusedDay,
+                          rowHeight: 35,
+                          
+                          selectedDayPredicate: (day) {
+                            return isSameDay(selectedDay, day);
+                          },
+
+                          onDaySelected: (selected, focused) {
+                            setState(() {
+                              selectedDay = selected;
+                              focusedDay = focused;
+                            }
+                            );
+                          },
+
+                          eventLoader: (day) {
+                            return tasks.where((task) {
+                              return isSameDay(task.dueDate, day);
+                            }).toList();
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Expanded(
+                        //   child: ListView(
+                        //     children: [
+                              Text(
+                                'Tasks for ${selectedDay.month}/${selectedDay.day}/${selectedDay.year}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              ...tasks.where((task) {
+                                return isSameDay(task.dueDate, selectedDay);
+                              }).map(
+                                (task){
+                                  return ListTile(
+                                    title: Text(task.title),
+                                    subtitle: Text(
+                                      '${task.category} • ${task.priority}\n'
+                                      '${TimeOfDay.fromDateTime(task.dueDate).format(context)}'
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          onPressed: () => editTask(task),
+                                          icon: const Icon(
+                                            Icons.edit_outlined,
+                                            color: Color(0xFF002366),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed:() => deleteTask(task),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          // ),
+
+                      //     ),
+                      // ],
+                    );
+                  }
 
                   if (tasks.isEmpty) {
                     return const Center(
