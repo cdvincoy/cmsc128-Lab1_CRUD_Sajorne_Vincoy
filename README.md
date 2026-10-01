@@ -213,6 +213,8 @@ The login screen provides a Forgot Password? option. Users enter their email add
 - Authentication errors are handled and presented to the user.
 - Password strength requirements are enforced by Firebase according to the project’s configured authentication policy.
 
+# Authentication and User Access Activity 2
+
 ## Authentication and Database Operations
 
 Firebase Authentication and Cloud Firestore have separate responsibilities.
