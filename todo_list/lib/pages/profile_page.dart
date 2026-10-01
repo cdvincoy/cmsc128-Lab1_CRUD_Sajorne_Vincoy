@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/pages/edit_profile.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:todo_list/pages/login.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -191,8 +193,17 @@ class ProfilePage extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: () {
-                  // for log out function
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pushReplacement(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => const LoginPage(),
+                    ),
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
