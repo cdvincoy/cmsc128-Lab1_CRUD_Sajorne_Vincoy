@@ -72,7 +72,7 @@ class AuthService {
         msg: message,
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
+        backgroundColor:const Color(0xFFFFE5E5),
         textColor: Colors.white,
         fontSize: 14.0,
       );
@@ -83,7 +83,7 @@ class AuthService {
         msg: 'Unable to create account. Please try again.',
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
+        backgroundColor:const Color(0xFFFFE5E5),
         textColor: Colors.white,
         fontSize: 14.0,
       );
@@ -155,8 +155,8 @@ class AuthService {
         msg: message,
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
+        backgroundColor:const Color(0xFFFFE5E5),
+        textColor: const Color(0xFFB00020),
         fontSize: 14.0,
       );
 
@@ -166,9 +166,59 @@ class AuthService {
         msg: 'Unable to log in. Please try again.',
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
+        backgroundColor:const Color(0xFFFFE5E5),
         textColor: Colors.white,
         fontSize: 14.0,
+      );
+
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+  }) async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: email,
+      );
+
+      Fluttertoast.showToast(
+        msg: 'Password recovery link sent to your email.',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: AppColors.mainButton,
+        textColor: Colors.white,
+      );
+
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+
+      if (e.code == 'invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (e.code == 'user-not-found') {
+        errorMessage = 'No account found for that email.';
+      } else {
+        errorMessage = 'Unable to send recovery email. Please try again.';
+      }
+
+      Fluttertoast.showToast(
+        msg: errorMessage,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor:const Color(0xFFFFE5E5),
+        textColor: Colors.white,
+      );
+
+      return false;
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Something went wrong. Please try again.',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor:const Color(0xFFFFE5E5),
+        textColor: Colors.white,
       );
 
       return false;
