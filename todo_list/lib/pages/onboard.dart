@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/theme/colors.dart';
-import 'package:todo_list/pages/tasks.dart';
+import 'package:todo_list/pages/login.dart';
+import 'package:todo_list/pages/signup.dart';
 
 class OnboardPage extends StatelessWidget {
   const OnboardPage({super.key});
@@ -43,29 +44,76 @@ class OnboardPage extends StatelessWidget {
 
               const Spacer(flex: 3),
 
-              SizedBox(
-                width: 235,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const TasksPage()));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mainButton,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(35),
+              Column(
+                children: [
+                  // Sign Up Button
+                  SizedBox(
+                    width: 235,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SignUpPage(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mainButton,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(35),
+                        ),
+                      ),
+                      child: const Text(
+                        'SIGN UP',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'GET STARTED',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
+
+                  const SizedBox(height: 14),
+
+                  // Log In Button
+                  SizedBox(
+                    width: 235,
+                    height: 55,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.mainButton,
+                        elevation: 0,
+                        side: BorderSide(
+                          color: AppColors.mainButton,
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(35),
+                        ),
+                      ),
+                      child: const Text(
+                        'LOG IN',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
 
               const SizedBox(height: 30),
