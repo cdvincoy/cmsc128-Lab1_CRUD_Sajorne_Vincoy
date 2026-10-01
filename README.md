@@ -169,19 +169,20 @@ Passwords are handled by Firebase Authentication and are not stored in Cloud Fir
 Users can create an account with an email address and password. The registration form:
 
 - Requires an email address and both password fields.
+- Requires username.
 - Checks that the password and confirmation match.
 - Lets users show or hide the password fields.
 - Creates the account through Firebase Authentication.
 - Displays relevant errors, such as an invalid email, an email already in use, or a password that does not meet Firebase’s configured requirements.
 - Returns the user to the login screen after successful registration.
 
-## Login
+### Login
 
 Users sign in with their registered email address and password through Firebase Authentication. The password is hidden by default, with an option to show it. The app displays messages for common sign-in errors, including invalid email or credentials.
 
 Successful sign-in is handled by the authentication service. 
 
-## Logout
+### Logout
 
 Users can log out from the Profile page. Before signing out, the application displays a confirmation dialog asking: "Are you sure you want to log out?"
 If confirmed, Firebase Authentication signs the user out and the application returns to the unauthenticated flow.
@@ -200,7 +201,7 @@ Authenticated users can view their profile information through the Profile page.
 
 Users can access the Edit Profile to update their username and email address. They can also enter and confirm new password when changing their password.
 
-## Password Recovery via Email
+### Password Recovery via Email
 
 The login screen provides a Forgot Password? option. Users enter their email address, and the app asks Firebase Authentication to send a password recovery link. The app reports whether the email was sent or whether an error occurred. Users can then go through their email and look for the recovery link sent by Firebase, in which they will be redirected to change their password. Firebase updates the user account's password credential, thus the old password will not authenticate the user.
 
@@ -229,12 +230,12 @@ Cloud Firestore manages:
 
 The user's Firebase Authentication UID is used as the document ID for the corresponding Firestore user record.
 
-## Database Inspection
+### Database Inspection
 
 User account records can be inspected through the Firebase Console's Cloud Firestore database interface.
 The users collection contains the profile information associated with each registered account. Passwords are not visible in these Firestore documents because password credentials are managed by Firebase Authentication.
 
-## Authentication Flow
+### Authentication Flow
 
 1. **App startup**: Firebase is initialized before the app displays the onboarding screen.
 2. **Registration**: A new user enters an email and password, confirms the password, and submits the form. The app validates the input and creates the account with Firebase Authentication.
