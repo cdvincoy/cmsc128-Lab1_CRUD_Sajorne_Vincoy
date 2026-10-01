@@ -154,3 +154,36 @@ Task data remains stored in Firestore, allowing tasks to persist after the appli
 <img src="assets/calendar.png" alt="App Screenshot" width="150"/>
 <img src="assets/undo.png" alt="App Screenshot" width="150"/>
 <img src="assets/db.jpg" alt="App Screenshot" width="150"/>
+
+
+## Authentication and User Account Management
+
+### Authentication Approach
+
+The application uses Firebase Authentication to manage user accounts and authentication. Firebase Authentication handles the user's credentials and authentication state, while Cloud Firestore is used to store application data and user-related profile information where applicable.
+
+## Implemented Authentication Features
+
+## User Account Data
+
+## Registration
+
+## Login
+
+## Logout
+
+## Session Persistence
+
+## Profile Management 
+
+## Password Recovery
+
+## Security Practices
+
+## Authentication and Database Operations
+
+## Database Inspection
+
+## Authentication Flow
+
+
