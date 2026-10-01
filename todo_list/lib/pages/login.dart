@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:todo_list/theme/colors.dart';
 import 'package:todo_list/pages/signup.dart';
 import 'package:todo_list/service/auth_service.dart';
+import 'package:todo_list/pages/profile_page.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,8 +13,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController identifierController =
+      TextEditingController();
+
+  final TextEditingController passwordController =
+      TextEditingController();
 
   bool isPasswordVisible = false;
 
@@ -97,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    emailController.dispose();
+    identifierController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -136,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         // Email Section
                         const Text(
-                          'Email',
+                          'Username or Email',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -146,8 +149,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 12),
                         TextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: identifierController,
                           style: const TextStyle(
                             color: Colors.black87,
                             fontSize: 16,
@@ -269,14 +271,18 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () async{
                                 final success =
                                 await AuthService().logIn(
-                                  email:emailController.text.trim(),
+                                  identifier: identifierController.text.trim(),
                                   password: passwordController.text,
                                 );
 
                                 if (!context.mounted) return;
 
                                 if (success){
-                                // add a redirect to profile page or landing page using Navigator.pushReplacement
+                                    Navigator.pushReplacement(
+                                      context, 
+                                      MaterialPageRoute(builder: (context) => const ProfilePage(),
+                                      ),
+                                    );
                                 }
                               },
                               style: ElevatedButton.styleFrom(

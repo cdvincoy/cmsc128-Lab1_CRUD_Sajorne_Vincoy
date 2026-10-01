@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:todo_list/theme/colors.dart';
 import 'package:todo_list/pages/login.dart';
@@ -12,6 +11,7 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -23,19 +23,27 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   void dispose() {
+    usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
   }
 
-  
   Future<void> signUp() async {
+    final username = usernameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text;
     final confirmPassword = confirmPasswordController.text;
 
-    // input validation
+    // Input validation
+    if (username.isEmpty) {
+      setState(() {
+        passwordError = 'Please enter a username.';
+      });
+      return;
+    }
+
     if (email.isEmpty) {
       setState(() {
         passwordError = 'Please enter your email.';
@@ -61,22 +69,26 @@ class _SignUpPageState extends State<SignUpPage> {
       passwordError = null;
     });
 
-    // create firebase acc by calling signUp
+    // Create Firebase account and Firestore user document
     final success = await AuthService().signUp(
+      username: username,
       email: email,
       password: password,
     );
 
     if (!mounted) return;
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const LoginPage(),
-        ),
-      );
+    // Stay on signup page if account creation fails
+    if (!success) {
+      return;
     }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+    );
   }
 
   @override
@@ -84,178 +96,219 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F9),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              flex: 4,
-              child: Center(
-                child: Image.asset(
-                  'lib/assets/applogo.png',
-                  width: 400,
-                  fit: BoxFit.contain,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Logo
+              SizedBox(
+                height: 220,
+                child: Center(
+                  child: Image.asset(
+                    'lib/assets/applogo.png',
+                    width: 300,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
-            ),
 
-            // sign up
-            Expanded(
-              flex: 6,
-              child: ClipPath(
+              // Sign up panel
+              ClipPath(
                 clipper: PanelClipper(),
                 child: Container(
                   width: double.infinity,
                   color: AppColors.mainButton,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      32, 75, 32, 20,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-                        // email section
-                        const Text(
-                          'Email',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                  padding: const EdgeInsets.fromLTRB(
+                    32,
+                    75,
+                    32,
+                    20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Username
+                      const Text(
+                        'Username',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
+                      ),
 
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                          ),
-                          decoration: inputDecoration(),
+                      const SizedBox(height: 10),
+
+                      TextField(
+                        controller: usernameController,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
                         ),
+                        decoration: inputDecoration(),
+                      ),
 
-                        const SizedBox(height: 18),
+                      const SizedBox(height: 18),
 
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Password',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
+                      // Email
+                      const Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                        ),
+                        decoration: inputDecoration(),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Password fields
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Password',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
                                   ),
+                                ),
 
-                                  const SizedBox(height: 10),
-                                  //password section
-                                  TextField(
-                                    controller: passwordController,
-                                    obscureText: !isPasswordVisible,
-                                    onChanged: (_) {
-                                      if (passwordError != null) {
+                                const SizedBox(height: 10),
+
+                                TextField(
+                                  controller: passwordController,
+                                  obscureText: !isPasswordVisible,
+                                  onChanged: (_) {
+                                    if (passwordError != null) {
+                                      setState(() {
+                                        passwordError = null;
+                                      });
+                                    }
+                                  },
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14,
+                                  ),
+                                  decoration: inputDecoration(
+                                    suffixIcon: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 32,
+                                        minHeight: 40,
+                                      ),
+                                      onPressed: () {
                                         setState(() {
-                                          passwordError = null;
+                                          isPasswordVisible =
+                                              !isPasswordVisible;
                                         });
-                                      }
-                                    },
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 14,
-                                    ),
-                                    decoration: inputDecoration(
-                                      suffixIcon: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                          minWidth: 32,
-                                          minHeight: 40,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            isPasswordVisible = !isPasswordVisible;
-                                          });
-                                        },
-                                        icon: Icon(
-                                          isPasswordVisible
-                                              ? Icons.visibility_off_outlined
-                                              : Icons.visibility_outlined,
-                                          color: AppColors.mainButton,
-                                          size: 20,
-                                        ),
+                                      },
+                                      icon: Icon(
+                                        isPasswordVisible
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: AppColors.mainButton,
+                                        size: 20,
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
+                          ),
 
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Confirm Password',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Confirm Password',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
                                   ),
+                                ),
 
-                                  const SizedBox(height: 10),
+                                const SizedBox(height: 10),
 
-                                  TextField(
-                                    controller: confirmPasswordController,
-                                    obscureText: !isConfirmPasswordVisible,
-                                    onChanged: (_) {
-                                      if (passwordError != null) {
+                                TextField(
+                                  controller: confirmPasswordController,
+                                  obscureText: !isConfirmPasswordVisible,
+                                  onChanged: (_) {
+                                    if (passwordError != null) {
+                                      setState(() {
+                                        passwordError = null;
+                                      });
+                                    }
+                                  },
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14,
+                                  ),
+                                  decoration: inputDecoration(
+                                    suffixIcon: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 32,
+                                        minHeight: 40,
+                                      ),
+                                      onPressed: () {
                                         setState(() {
-                                          passwordError = null;
+                                          isConfirmPasswordVisible =
+                                              !isConfirmPasswordVisible;
                                         });
-                                      }
-                                    },
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 14,
-                                    ),
-                                    decoration: inputDecoration(
-                                      suffixIcon: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                          minWidth: 32,
-                                          minHeight: 40,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            isConfirmPasswordVisible =
-                                                !isConfirmPasswordVisible;
-                                          });
-                                        },
-                                        icon: Icon(
-                                          isConfirmPasswordVisible
-                                              ? Icons.visibility_off_outlined
-                                              : Icons.visibility_outlined,
-                                          color: AppColors.mainButton,
-                                          size: 20,
-                                        ),
+                                      },
+                                      icon: Icon(
+                                        isConfirmPasswordVisible
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: AppColors.mainButton,
+                                        size: 20,
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Password requirements
+                      const Text(
+                        'Password must contain at least one capital letter, '
+                        'one number, and one special character.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
                         ),
-                       if (passwordError != null) ...[
+                      ),
+
+                      // Error message
+                      if (passwordError != null) ...[
                         const SizedBox(height: 15),
+
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -268,7 +321,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                           child: Text(
                             passwordError!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Color(0xFFB00020),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -277,83 +330,84 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ],
 
-                        const Spacer(),
-                        Center(
-                          child: SizedBox(
-                            width: 235,
-                            height: 55,
-                            child: ElevatedButton(
-                              onPressed: signUp,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xFFF7F7F9),
-                                foregroundColor: AppColors.mainButton,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(35),
-                                ),
+                      const SizedBox(height: 35),
+
+                      // Sign Up button
+                      Center(
+                        child: SizedBox(
+                          width: 235,
+                          height: 55,
+                          child: ElevatedButton(
+                            onPressed: signUp,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(0xFFF7F7F9),
+                              foregroundColor: AppColors.mainButton,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(35),
                               ),
-                              child: const Text(
-                                'SIGN UP',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            child: const Text(
+                              'SIGN UP',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                        const SizedBox(height: 14),
+                      const SizedBox(height: 14),
 
-                        Center(
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            children: [
-                              const Text(
-                                'Already have an account? ',
+                      // Login
+                      Center(
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          children: [
+                            const Text(
+                              'Already have an account? ',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const LoginPage(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Login',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white,
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const LoginPage(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    decoration:
-                                        TextDecoration.underline,
-                                    decorationColor: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
   InputDecoration inputDecoration({Widget? suffixIcon}) {
     return InputDecoration(
       filled: true,
@@ -405,7 +459,9 @@ class PanelClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+  bool shouldReclip(
+    covariant CustomClipper<Path> oldClipper,
+  ) {
     return false;
   }
 }

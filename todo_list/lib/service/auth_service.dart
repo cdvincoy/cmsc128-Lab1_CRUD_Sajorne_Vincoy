@@ -1,91 +1,91 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:todo_list/theme/colors.dart';
 
 class AuthService {
-
   Future<bool> signUp({
+    required String username,
     required String email,
     required String password,
   }) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // Check if username already exists
+      final usernameQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .limit(1)
+          .get();
+
+      if (usernameQuery.docs.isNotEmpty) {
+        Fluttertoast.showToast(
+          msg: 'Username is already taken.',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
+        return false;
+      }
+
+      // Create Firebase Authentication account
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      final uid = userCredential.user!.uid;
+
+      // Create Firestore user document
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'username': username,
+        'email': email,
+      });
+
       Fluttertoast.showToast(
         msg: 'Account created successfully!',
-        toastLength: Toast.LENGTH_LONG,
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: AppColors.mainButton,
         textColor: Colors.white,
-        fontSize: 16.0,
+        fontSize: 14.0,
       );
 
       return true;
     } on FirebaseAuthException catch (e) {
-      debugPrint('FIREBASE SIGNUP ERROR: ${e.code} - ${e.message}');
-      String errorMessage;
-      if (e.code == 'weak-password') {
-        errorMessage = 'The password provided is too weak.';
+      String message = 'Something went wrong.';
+
+      if (e.code == 'weak-password' ||
+          e.code == 'password-does-not-meet-requirements') {
+        message =
+            'Password must contain a capital letter, a number, and a special character.';
       } else if (e.code == 'email-already-in-use') {
-        errorMessage = 'An account already exists for that email.';
+        message = 'An account already exists with this email.';
       } else if (e.code == 'invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (e.code == 'password-does-not-meet-requirements') {
-        final message = e.message ?? '';
-
-        final requirements = <String>[];
-
-        if (message.contains('upper case character')) {
-          requirements.add('at least one uppercase letter (A–Z)');
-        }
-
-        if (message.contains('lower case character')) {
-          requirements.add('at least one lowercase letter (a–z)');
-        }
-
-        if (message.contains('numeric character')) {
-          requirements.add('at least one number (0–9)');
-        }
-
-        if (message.contains('non-alphanumeric character')) {
-          requirements.add('at least one special character (e.g., !, @, #)');
-        }
-
-        if (requirements.isNotEmpty) {
-          errorMessage =
-              'Your password must contain:\n'
-              '${requirements.map((requirement) => '• $requirement').join('\n')}';
-        } else {
-          errorMessage =
-              'Your password does not meet the required security rules.';
-        }
-      } else {
-        errorMessage = 'An error occurred. Please try again.';
+        message = 'Please enter a valid email address.';
       }
 
       Fluttertoast.showToast(
-        msg: errorMessage,
-        toastLength: Toast.LENGTH_LONG,
+        msg: message,
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor:const Color(0xFFFFE5E5),
         textColor: Colors.white,
-        fontSize: 16.0,
+        fontSize: 14.0,
       );
 
       return false;
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Something went wrong. Please try again.',
-        toastLength: Toast.LENGTH_LONG,
+        msg: 'Unable to create account. Please try again.',
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor:const Color(0xFFFFE5E5),
         textColor: Colors.white,
-        fontSize: 16.0,
+        fontSize: 14.0,
       );
 
       return false;
@@ -93,10 +93,37 @@ class AuthService {
   }
 
   Future<bool> logIn({
-    required String email,
+    required String identifier,
     required String password,
   }) async {
     try {
+      String email = identifier.trim();
+
+      // If the user entered a username, find the linked email.
+      if (!identifier.contains('@')) {
+        final usernameQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: identifier.trim())
+            .limit(1)
+            .get();
+
+        if (usernameQuery.docs.isEmpty) {
+          Fluttertoast.showToast(
+            msg: 'No account found with this username.',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 14.0,
+          );
+
+          return false;
+        }
+
+        email = usernameQuery.docs.first.data()['email'];
+      }
+
+      // Firebase Authentication verifies the password.
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -104,46 +131,44 @@ class AuthService {
 
       Fluttertoast.showToast(
         msg: 'Login successful!',
-        toastLength: Toast.LENGTH_LONG,
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: AppColors.mainButton,
         textColor: Colors.white,
-        fontSize: 16.0,
+        fontSize: 14.0,
       );
+
       return true;
     } on FirebaseAuthException catch (e) {
-      String errorMessage;
+      String message = 'Login failed.';
 
       if (e.code == 'user-not-found') {
-        errorMessage = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = 'Incorrect password.';
+        message = 'No account found.';
+      } else if (e.code == 'wrong-password' ||
+          e.code == 'invalid-credential') {
+        message = 'Incorrect username/email or password.';
       } else if (e.code == 'invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (e.code == 'invalid-credential') {
-        errorMessage = 'Incorrect email or password.';
-      } else {
-        errorMessage = 'An error occurred. Please try again.';
+        message = 'Please enter a valid email address.';
       }
 
       Fluttertoast.showToast(
-        msg: errorMessage,
-        toastLength: Toast.LENGTH_LONG,
+        msg: message,
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor:const Color(0xFFFFE5E5),
         textColor: const Color(0xFFB00020),
-        fontSize: 16.0,
+        fontSize: 14.0,
       );
 
       return false;
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Something went wrong. Please try again.',
-        toastLength: Toast.LENGTH_LONG,
+        msg: 'Unable to log in. Please try again.',
+        toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         backgroundColor:const Color(0xFFFFE5E5),
         textColor: Colors.white,
-        fontSize: 16.0,
+        fontSize: 14.0,
       );
 
       return false;
