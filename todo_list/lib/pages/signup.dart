@@ -62,18 +62,21 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     // create firebase acc by calling signUp
-    await AuthService().signUp(
+    final success = await AuthService().signUp(
       email: email,
       password: password,
     );
 
-    await Future.delayed(const Duration(seconds: 1));
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(),
-      ),
-    );
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(),
+        ),
+      );
+    }
   }
 
   @override
