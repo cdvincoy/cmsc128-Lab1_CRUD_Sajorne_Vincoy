@@ -161,6 +161,7 @@ Each registered user has a unique Firebase Authentication UID. User profile info
 The stored profile information currently includes:
 - username
 - email address
+  
 Passwords are handled by Firebase Authentication and are not stored in Cloud Firestore.
 
 ### Registration
