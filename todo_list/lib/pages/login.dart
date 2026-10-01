@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:todo_list/theme/colors.dart';
 import 'package:todo_list/pages/signup.dart';
 import 'package:todo_list/service/auth_service.dart';
+import 'package:todo_list/pages/profile_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -176,7 +177,11 @@ class _LoginPageState extends State<LoginPage> {
                                 if (!context.mounted) return;
 
                                 if (success){
-                                // add a redirect to profile page or landing page using Navigator.pushReplacement
+                                    Navigator.pushReplacement(
+                                      context, 
+                                      MaterialPageRoute(builder: (context) => const ProfilePage(),
+                                      ),
+                                    );
                                 }
                               },
                               style: ElevatedButton.styleFrom(
