@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:todo_list/theme/colors.dart';
 import 'package:todo_list/pages/signup.dart';
@@ -13,14 +12,17 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController identifierController =
+      TextEditingController();
+
+  final TextEditingController passwordController =
+      TextEditingController();
 
   bool isPasswordVisible = false;
 
   @override
   void dispose() {
-    emailController.dispose();
+    identifierController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -59,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         // Email Section
                         const Text(
-                          'Email',
+                          'Username or Email',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -69,8 +71,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 12),
                         TextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: identifierController,
                           style: const TextStyle(
                             color: Colors.black87,
                             fontSize: 16,
@@ -170,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () async{
                                 final success =
                                 await AuthService().logIn(
-                                  email:emailController.text.trim(),
+                                  identifier: identifierController.text.trim(),
                                   password: passwordController.text,
                                 );
 

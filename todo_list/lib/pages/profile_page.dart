@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/pages/edit_profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:todo_list/pages/login.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -8,226 +9,282 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F9),
+    final user = FirebaseAuth.instance.currentUser;
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F7F9),
-        elevation: 0,
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+    if (user == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('No user is currently logged in.'),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.black,
-        ),
-      ),
+      );
+    }
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 30),
-
-            // Profile picture
-            CircleAvatar(
-              radius: 55,
-              backgroundColor: const Color(0xFF002366),
-              child: const Icon(
-                Icons.person,
-                size: 60,
-                color: Colors.white,
-              ),
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
             ),
+          );
+        }
 
-            const SizedBox(height: 16),
+        final data = snapshot.data?.data() as Map<String, dynamic>?;
 
-            // Username
-            const Text(
-              'Your Name',
+        final username = data?['username'] ?? 'User';
+        final email = data?['email'] ?? user.email ?? '';
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF7F7F9),
+
+          appBar: AppBar(
+            backgroundColor: const Color(0xFFF7F7F9),
+            elevation: 0,
+            title: const Text(
+              'Profile',
               style: TextStyle(
-                fontSize: 24,
+                color: Colors.black,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
-            const SizedBox(height: 6),
-
-            // User email
-            const Text(
-              'your@email.com',
-              style: TextStyle(
-                fontSize: 15,
-                color: Color(0xFF777777),
-              ),
+            iconTheme: const IconThemeData(
+              color: Colors.black,
             ),
+          ),
 
-            const SizedBox(height: 30),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
 
-            // Personal Information section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Personal Information',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
 
-                  const SizedBox(height: 20),
-
-                  // Name
-                  const Text(
-                    'Name',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF999999),
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  const Text(
-                    'Your Name',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Email
-                  const Text(
-                    'Email',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF999999),
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  const Text(
-                    'your@email.com',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Password
-                  const Text(
-                    'Password',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF999999),
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  const Text(
-                    '••••••••',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Edit Profile button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context) => const EditProfilePage(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
+                // Profile picture
+                CircleAvatar(
+                  radius: 55,
                   backgroundColor: const Color(0xFF002366),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+                  child: const Icon(
+                    Icons.person,
+                    size: 60,
+                    color: Colors.white,
                   ),
                 ),
-                child: const Text(
-                  'Edit Profile',
-                  style: TextStyle(
-                    fontSize: 16,
+
+                const SizedBox(height: 16),
+
+                // Greeting
+                Text(
+                  'Hello, $username!',
+                  style: const TextStyle(
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 20),
+                const SizedBox(height: 6),
 
-            // Log Out button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
+                // User email
+                Text(
+                  email,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF777777),
+                  ),
+                ),
 
-                  if (!context.mounted) return;
+                const SizedBox(height: 30),
 
-                  Navigator.pushReplacement(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context) => const LoginPage(),
+                // Personal Information section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Personal Information',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Username
+                      const Text(
+                        'Username',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Email
+                      const Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        email,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Password
+                      const Text(
+                        'Password',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      const Text(
+                        '••••••••',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Edit Profile button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EditProfilePage(),
+                        ),
+                      );
+                    },
+
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF002366),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
                     ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(
-                    color: Colors.red,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Log Out',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
+                    child: const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Log Out button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final shouldLogout = await showDialog<bool>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                          title: const Text('Log Out'),
+                          content: const Text('Are you sure you want to log out?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context, false);
+                              },
+                              child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, true);
+                                },
+                                child: const Text('Log Out'),
+                                ),
+                          ],
+                        );
+                      },
+                      );
+
+                      if (shouldLogout == true) {
+                        await FirebaseAuth.instance.signOut();
+                      }
+                    },
+
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(
+                        color: Colors.red,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+
+                    child: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
