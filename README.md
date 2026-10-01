@@ -150,13 +150,20 @@ Task data remains stored in Firestore, allowing tasks to persist after the appli
 
 ### Authentication Approach
 
-The application uses Firebase Authentication to manage user accounts and authentication. Firebase Authentication handles the user's credentials and authentication state, while Cloud Firestore is used to store application data and user-related profile information where applicable.
+The application uses Firebase Authentication to manage user accounts and authentication. Firebase Authentication handles the user's credentials and authentication state, while Cloud Firestore is used to store application data and user-related profile information and application data.
 
 ## Implemented Authentication Features
 
-## User Account Data
+### User Account Data
 
-## Registration
+Each registered user has a unique Firebase Authentication UID. User profile information is stored in the users collection using the user's UID as the document ID.
+
+The stored profile information currently includes:
+- username
+- email address
+Passwords are handled by Firebase Authentication and are not stored in Cloud Firestore.
+
+### Registration
 
 Users can create an account with an email address and password. The registration form:
 
@@ -175,9 +182,22 @@ Successful sign-in is handled by the authentication service.
 
 ## Logout
 
-## Session Persistence
+Users can log out from the Profile page. Before signing out, the application displays a confirmation dialog asking: "Are you sure you want to log out?"
+If confirmed, Firebase Authentication signs the user out and the application returns to the unauthenticated flow.
 
-## Profile Management 
+### Session Persistence
+
+The application uses Firebase Authentication's authentication state to determine whether a user is currently logged in.
+
+An authentication state listener (authStateChanges()) is used by the application to display the appropriate page depending on whether a valid authenticated session exists.
+
+The authenticated session persists across application refreshes until the user logs out.
+
+### Profile Management
+
+Authenticated users can view their profile information through the Profile page. The profile page displays the user's username and email address retrieved from Cloud Firestore.
+
+Users can access the Edit Profile to update their username and email address. They can also enter and confirm new password when changing their password.
 
 ## Password Recovery via Email
 
@@ -193,7 +213,25 @@ The login screen provides a Forgot Password? option. Users enter their email add
 
 ## Authentication and Database Operations
 
+Firebase Authentication and Cloud Firestore have separate responsibilities.
+
+Firebase Authentication manages:
+- user identity
+- email/password changes
+- authentication state
+- login and logout
+
+Cloud Firestore manages:
+- username
+- email address
+- other data associated with the user (tasks later)
+
+The user's Firebase Authentication UID is used as the document ID for the corresponding Firestore user record.
+
 ## Database Inspection
+
+User account records can be inspected through the Firebase Console's Cloud Firestore database interface.
+The users collection contains the profile information associated with each registered account. Passwords are not visible in these Firestore documents because password credentials are managed by Firebase Authentication.
 
 ## Authentication Flow
 
