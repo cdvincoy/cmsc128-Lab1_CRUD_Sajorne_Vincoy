@@ -5,6 +5,7 @@ import 'package:todo_list/service/tasks_actions.dart';
 import 'package:todo_list/service/category_actions.dart';
 import 'package:todo_list/models/task.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:todo_list/pages/profile_page.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -136,7 +137,12 @@ class _TasksPageState extends State<TasksPage> {
         actions: [
           IconButton(
             onPressed: () {
-              // More options
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context)=> const ProfilePage(),
+                ),
+              );
             },
             icon: const Icon(
               Icons.more_vert,
