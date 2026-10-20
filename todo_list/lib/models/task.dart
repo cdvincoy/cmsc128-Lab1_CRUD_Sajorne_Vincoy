@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Task {
   final String id;
+  final String ownerUid;        // added ownerUid field to identify which Firebase user owns each task
   final String title;
   final DateTime dueDate;
   final DateTime timeCreated;
@@ -11,6 +12,7 @@ class Task {
 
   Task({
     required this.id,
+    required this.ownerUid,
     required this.title,
     required this.dueDate,
     required this.timeCreated,
@@ -21,6 +23,7 @@ class Task {
 
    Map<String, dynamic> toMap() {
     return {
+      'ownerUid': ownerUid,
       'title': title,
       'dueDate': dueDate,
       'timeCreated': timeCreated,
@@ -33,6 +36,7 @@ class Task {
   factory Task.fromMap(String id, Map<String, dynamic> map) {
     return Task(
       id: id,
+      ownerUid: map['ownerUid'] ?? '',
       title: map['title'] ?? '',
       dueDate: (map['dueDate'] as Timestamp).toDate(),
       timeCreated: (map['timeCreated'] as Timestamp).toDate(),
