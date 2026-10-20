@@ -3,6 +3,7 @@ import 'package:todo_list/theme/colors.dart';
 import 'package:todo_list/pages/signup.dart';
 import 'package:todo_list/service/auth_service.dart';
 import 'package:todo_list/pages/profile_page.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +20,83 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   bool isPasswordVisible = false;
+
+  void showForgotPassword() {
+    final TextEditingController recoveryEmailController =
+        TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Forgot Password?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            controller: recoveryEmailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: 'Enter email',
+              hintText: 'you@example.com',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainButton,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () async {
+                final email = recoveryEmailController.text.trim();
+
+                if (email.isEmpty) {
+                  Fluttertoast.showToast(
+                    msg: 'Please enter your email address.',
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                  );
+                  return;
+                }
+
+                final success = await AuthService().resetPassword(
+                  email: email,
+                );
+
+                if (!dialogContext.mounted) return;
+
+                if (success) {
+                  Navigator.pop(dialogContext);
+
+                  passwordController.clear();
+                }
+              },
+              child: const Text('Send Recovery Link'),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      recoveryEmailController.dispose();
+    });
+  }
 
   @override
   void dispose() {
@@ -161,7 +239,29 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 100),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: showForgotPassword,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 70),
                         // Login Button
                         Center(
                           child: SizedBox(

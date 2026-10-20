@@ -146,16 +146,6 @@ Each task contains information such as:
 
 Task data remains stored in Firestore, allowing tasks to persist after the application is closed or started.
 
-<img src="assets/splashscreen.png" alt="App Screenshot" width="150"/>
-<img src="assets/onboard.png" alt="App Screenshot" width="150"/>
-<img src="assets/taskscreen1.png" alt="App Screenshot" width="150"/>
-<img src="assets/completedtask.png" alt="App Screenshot" width="150"/>
-<img src="assets/addtask.png" alt="App Screenshot" width="150"/>
-<img src="assets/calendar.png" alt="App Screenshot" width="150"/>
-<img src="assets/undo.png" alt="App Screenshot" width="150"/>
-<img src="assets/db.jpg" alt="App Screenshot" width="150"/>
-
-
 ## Authentication and User Account Management
 
 ### Authentication Approach
@@ -168,7 +158,20 @@ The application uses Firebase Authentication to manage user accounts and authent
 
 ## Registration
 
+Users can create an account with an email address and password. The registration form:
+
+- Requires an email address and both password fields.
+- Checks that the password and confirmation match.
+- Lets users show or hide the password fields.
+- Creates the account through Firebase Authentication.
+- Displays relevant errors, such as an invalid email, an email already in use, or a password that does not meet Firebase’s configured requirements.
+- Returns the user to the login screen after successful registration.
+
 ## Login
+
+Users sign in with their registered email address and password through Firebase Authentication. The password is hidden by default, with an option to show it. The app displays messages for common sign-in errors, including invalid email or credentials.
+
+Successful sign-in is handled by the authentication service. 
 
 ## Logout
 
@@ -176,14 +179,28 @@ The application uses Firebase Authentication to manage user accounts and authent
 
 ## Profile Management 
 
-## Password Recovery
+## Password Recovery via Email
+
+The login screen provides a Forgot Password? option. Users enter their email address, and the app asks Firebase Authentication to send a password recovery link. The app reports whether the email was sent or whether an error occurred. Users can then go through their email and look for the recovery link sent by Firebase, in which they will be redirected to change their password. Firebase updates the user account's password credential, thus the old password will not authenticate the user.
 
 ## Security Practices
+
+- Firebase Authentication manages account credentials; it uses an internally modified version of scrypt to hash account passwordss.
+- Password fields are obscured by default and can be revealed only by user action.
+- Registration checks for missing values and mismatched passwords before sending the request to Firebase.
+- Authentication errors are handled and presented to the user.
+- Password strength requirements are enforced by Firebase according to the project’s configured authentication policy.
 
 ## Authentication and Database Operations
 
 ## Database Inspection
 
 ## Authentication Flow
+
+1. **App startup**: Firebase is initialized before the app displays the onboarding screen.
+2. **Registration**: A new user enters an email and password, confirms the password, and submits the form. The app validates the input and creates the account with Firebase Authentication.
+3. **After authentication**: Successful registration returns the user to the login screen. Login success is reported, but the app does not yet navigate to the task screen automatically.
+4. **Login**: A registered user enters their email and password. Firebase Authentication verifies the credentials and reports success or an error.
+5. **Password recovery**: From the login screen, a user can enter their email address to request a password-reset link from Firebase Authentication.
 
 
