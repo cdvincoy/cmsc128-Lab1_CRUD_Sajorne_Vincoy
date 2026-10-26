@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_list/pages/onboard.dart';
 import 'package:todo_list/pages/profile_page.dart';
+import 'package:todo_list/pages/tasks.dart';
 
 import 'firebase_options.dart';
 

@@ -1,38 +1,110 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:todo_list/models/categories.dart';
 
 class CategoryActions {
-  final CollectionReference categoriesCollection =
+  final CollectionReference<Map<String, dynamic>>
+      categoriesCollection =
       FirebaseFirestore.instance.collection('categories');
 
+  // Get the current authenticated user's UID.
+  String get _currentUid {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw StateError('User must be signed in.');
+    }
+
+    return user.uid;
+  }
+
+  // Initialize shared default categories.
+  // Call this during app initialization after Firebase setup.
   Future<void> createCategories() async {
-    final snapshot = await categoriesCollection.get();
+    const defaultCategories = [
+      'Personal',
+      'School',
+      'Work',
+    ];
 
-    if (snapshot.docs.isEmpty) {
-      // Create default categories
-      final defaultCategories = [
-        'Work',
-        'Personal',
-        'Shopping',
-        'Health',
-        'School',
-      ];
+    for (final name in defaultCategories) {
+      final existing = await categoriesCollection
+          .where('name', isEqualTo: name)
+          .limit(1)
+          .get();
 
-      for (final category in defaultCategories) {
+      if (existing.docs.isEmpty) {
         await categoriesCollection.add({
-          'name': category,
+          'name': name,
+          'isDefault': true,
         });
+      } else {
+        final doc = existing.docs.first;
+        final data = doc.data();
+
+        // Mark existing defaults as shared.
+        if (data['isDefault'] != true) {
+          await doc.reference.update({
+            'isDefault': true,
+          });
+        }
       }
     }
   }
 
+  // Read shared defaults and only the current
+  // user's custom categories.
+  Query<Map<String, dynamic>> _visibleCategoriesQuery(
+    String uid,
+  ) {
+    return categoriesCollection.where(
+      Filter.or(
+        Filter('isDefault', isEqualTo: true),
+        Filter('ownerUid', isEqualTo: uid),
+      ),
+    );
+  }
+
+  // Return Category objects with document IDs.
+  Stream<List<Category>> readCategories() {
+    final uid = _currentUid;
+
+    return _visibleCategoriesQuery(uid)
+        .snapshots()
+        .map((snapshot) {
+      final categories = snapshot.docs
+          .map(Category.fromDocument)
+          .toList();
+
+      categories.sort(
+        (a, b) => a.name.toLowerCase().compareTo(
+              b.name.toLowerCase(),
+            ),
+      );
+
+      return categories;
+    });
+  }
+
+  // Create a custom category owned by the user.
   Future<bool> createCategory(String name) async {
-    final snapshot = await categoriesCollection.get();
+    final uid = _currentUid;
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      return false;
+    }
+
+    final snapshot =
+        await _visibleCategoriesQuery(uid).get();
 
     final alreadyExists = snapshot.docs.any((doc) {
-      final category = doc.data() as Map<String, dynamic>;
+      final existingName =
+          (doc.data()['name'] as String).trim();
 
-      return (category['name'] as String).trim().toLowerCase() ==
-          name.trim().toLowerCase();
+      return existingName.toLowerCase() ==
+          trimmedName.toLowerCase();
     });
 
     if (alreadyExists) {
@@ -40,66 +112,92 @@ class CategoryActions {
     }
 
     await categoriesCollection.add({
-      'name': name.trim(),
+      'name': trimmedName,
+      'ownerUid': uid,
+      'isDefault': false,
     });
 
     return true;
   }
 
-  Stream<List<String>> readCategories() {
-    return categoriesCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final category = doc.data() as Map<String, dynamic>;
-        return category['name'] as String;
-      }).toList();
-    });
-  }
-
+  // Update only the user's own custom category.
+  // categoryId is the Firestore document ID.
   Future<bool> updateCategory(
-    String oldName,
+    String categoryId,
     String newName,
   ) async {
-    final snapshot = await categoriesCollection.get();
+    final uid = _currentUid;
+    final trimmedName = newName.trim();
 
-    final alreadyExists = snapshot.docs.any((doc) {
-      final category = doc.data() as Map<String, dynamic>;
+    if (trimmedName.isEmpty) {
+      return false;
+    }
 
-      return (category['name'] as String).trim().toLowerCase() ==
-          newName.trim().toLowerCase();
+    final docRef = categoriesCollection.doc(categoryId);
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      return false;
+    }
+
+    final data = doc.data()!;
+
+    // Prevent editing defaults or other
+    // users' categories.
+    if (data['isDefault'] == true ||
+        data['ownerUid'] != uid) {
+      return false;
+    }
+
+    final snapshot =
+        await _visibleCategoriesQuery(uid).get();
+
+    final alreadyExists = snapshot.docs.any((otherDoc) {
+      if (otherDoc.id == categoryId) {
+        return false;
+      }
+
+      final existingName =
+          (otherDoc.data()['name'] as String).trim();
+
+      return existingName.toLowerCase() ==
+          trimmedName.toLowerCase();
     });
 
     if (alreadyExists) {
       return false;
     }
 
-    for (final doc in snapshot.docs) {
-      final category = doc.data() as Map<String, dynamic>;
-
-      if ((category['name'] as String).trim().toLowerCase() ==
-          oldName.trim().toLowerCase()) {
-        await doc.reference.update({
-          'name': newName.trim(),
-        });
-
-        break;
-      }
-    }
+    await docRef.update({
+      'name': trimmedName,
+    });
 
     return true;
   }
 
-  Future<void> deleteCategory(String categoryName) async {
-    final snapshot = await categoriesCollection.get();
+  // Delete only the user's own custom category.
+  // categoryId is the Firestore document ID.
+  Future<bool> deleteCategory(String categoryId) async {
+    final uid = _currentUid;
 
-    for (final doc in snapshot.docs) {
-      final category = doc.data() as Map<String, dynamic>;
+    final docRef = categoriesCollection.doc(categoryId);
+    final doc = await docRef.get();
 
-      if ((category['name'] as String).trim().toLowerCase() ==
-          categoryName.trim().toLowerCase()) {
-        await doc.reference.delete();
-
-        break;
-      }
+    if (!doc.exists) {
+      return false;
     }
+
+    final data = doc.data()!;
+
+    // Prevent deleting defaults or other
+    // users' categories.
+    if (data['isDefault'] == true ||
+        data['ownerUid'] != uid) {
+      return false;
+    }
+
+    await docRef.delete();
+
+    return true;
   }
 }

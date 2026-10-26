@@ -245,7 +245,10 @@ class ProfilePage extends StatelessWidget {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(context, true);
+
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  );
                                 },
                                 child: const Text('Log Out'),
                                 ),
